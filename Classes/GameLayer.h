@@ -1,0 +1,34 @@
+#pragma once
+#include <cocostudio/SimpleAudioEngine.h>
+#include "cocos2d.h"
+#include "Player.h"
+#include "Enemy.h"
+#include "GameMenu.h"
+
+using namespace CocosDenshion;
+using namespace cocos2d;
+
+class GameLayer:public Layer{
+private:
+	PhysicsWorld* sceneWorld;
+	void SetPhysicsWorld(PhysicsWorld* world) { sceneWorld = world; }
+	bool onContactBegin(PhysicsContact& contact);
+public:
+	GameLayer();
+	virtual bool init();
+	static cocos2d::Scene* scene();
+	void update(float deltaTime);
+	static Scene* createScene();
+	CREATE_FUNC(GameLayer);
+	void onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event);
+	void onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event);
+	void doRemoveFromParentAndCleanup(Node* sender, bool cleanup);
+	void FirstRound();
+	void SecondRound();
+	void ThirdRound();
+	void FourthRound();
+	void BossFight();
+	Sprite* createEnemy(int type, Vec2 initialPosition);
+	void moveRandom(Sprite* sender);
+	void playerDeath();
+};

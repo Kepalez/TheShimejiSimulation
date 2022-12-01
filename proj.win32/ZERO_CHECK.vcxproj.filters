@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\proj.win32\CMakeFiles\ec4f6ec545703347f93a0a7fbd078f0b\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{F35A2A18-9B01-3196-BEA7-4456227086EF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
