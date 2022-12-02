@@ -28,6 +28,10 @@ void Player::takeDmg()
 	life--;
 }
 
+void Player::heal() {
+	if(life<10) life++;
+}
+
 float Player::getSpeed() {
 	return speed;
 }

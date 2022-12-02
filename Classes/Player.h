@@ -18,6 +18,7 @@ public:
 	void setSpeed(float speedToSet);
 	void setLife(int lifeToSet);
 	void takeDmg();
+	void heal();
 
 	float getSpeed();
 	int getLife();

@@ -1,7 +1,7 @@
 #include "GameLayer.h"
 
 using namespace cocos2d;
-//Cat.Bitmasks Player:1, PlayerBullet:2, Enemy:4, EnemyBullet: 8, kamikaze: 16 
+//Cat.Bitmasks Player:1, PlayerBullet:2, Enemy:4, EnemyBullet: 8, MedKit: 16 
 //window size 520, 760
 
 float PlayerXDir = 0.0f, PlayerYDir = 0.0f, PlayerXMov = 0.0f, PlayerYMov = 0.0f;
@@ -12,7 +12,7 @@ float playerCollisionWidth = 28,playerCollisionHeight = 80;
 
 Scene* GameLayer::createScene() {
 	auto scene = Scene::createWithPhysics();
-	scene->getPhysicsWorld()->setDebugDrawMask(true);
+	scene->getPhysicsWorld()->setDebugDrawMask(false);
 	scene->getPhysicsWorld()->setGravity(Vec2(0, 0));
 
 	auto layer = GameLayer::create();
@@ -76,6 +76,8 @@ Scene* GameLayer::scene() {
 	scene->addChild(GameLayer::create());
 	return scene;
 }
+
+
 void GameLayer::doRemoveFromParentAndCleanup(Node* sender, bool cleanup)
 {
 	sender->removeFromParentAndCleanup(cleanup);
@@ -159,6 +161,51 @@ void GameLayer::moveRandom(Sprite* sender) {
 		break;
 	}
 }
+void GameLayer::bossAttack(Node* bossController) {
+	if (!gameOver) {
+		int randAttack = RandomHelper::random_int(1, 3);
+		auto delay = DelayTime::create(5.0f);
+		auto attackAgain = CallFunc::create([=]() {bossAttack(bossController); });
+		switch (randAttack) {
+		case 1: //summon blueLobsters
+			moveRandom(createEnemy(1, Vec2(-20.0f, 600.0f)));
+			moveRandom(createEnemy(1, Vec2(-20.0f, 600.0f)));
+			moveRandom(createEnemy(1, Vec2(-20.0f, 600.0f)));
+			moveRandom(createEnemy(1, Vec2(-20.0f, 600.0f)));
+			moveRandom(createEnemy(1, Vec2(540.0f, 600.0f)));
+			moveRandom(createEnemy(1, Vec2(540.0f, 600.0f)));
+			break;
+		case 3: //summon redLobsters
+			moveRandom(createEnemy(2, Vec2(-20.0f, 600.0f)));
+			moveRandom(createEnemy(2, Vec2(-20.0f, 600.0f)));
+			break;
+		case 2: //Shoot
+			auto bullet = Sprite::create("../Resources/Image/EnemyBullet.png", Rect(60.0f, 0.0f, 60.0f, 60.0f));
+			bullet->setPhysicsBody(PhysicsBody::createCircle(30, PhysicsMaterial(1, 0, 0)));
+			Vec2 lobsterBody = Vec2(bossController->getChildByName<Sprite*>("body")->getPosition());
+			bullet->setPosition(lobsterBody.x, lobsterBody.y - 30.0f);
+			bullet->getPhysicsBody()->setCategoryBitmask(8);
+			bullet->getPhysicsBody()->setContactTestBitmask(1);
+			bullet->getPhysicsBody()->setCollisionBitmask(1);
+			auto playerPos = Point(PlayerSprite->getPosition());
+			auto bulletScale = ScaleTo::create(1.0f, 3.0f);
+			auto bulletMoveBy = MoveBy::create(playerPos.getDistance(bullet->getPosition()) * 2 / 100.0f, (playerPos - bullet->getPosition()) * 5.0f);
+			this->addChild(bullet);
+			bullet->runAction(Sequence::create(
+				bulletScale,
+				DelayTime::create(0.5f),
+				bulletMoveBy,
+				CallFuncN::create(CC_CALLBACK_1(GameLayer::doRemoveFromParentAndCleanup, this, true)),
+				NULL));
+
+		}
+		bossController->runAction(Sequence::create(
+			delay,
+			attackAgain,
+			nullptr
+		));
+	}
+}
 bool GameLayer::onContactBegin(PhysicsContact& contact) {
 	PhysicsBody* a = contact.getShapeA()->getBody();
 	PhysicsBody* b = contact.getShapeB()->getBody();
@@ -166,24 +213,89 @@ bool GameLayer::onContactBegin(PhysicsContact& contact) {
 	auto bcol = b->getCategoryBitmask();
 	//bullet to enenmy
 	if ((acol == 4  && bcol == 2) ||( acol == 2 && bcol == 4 )) {
+		Sprite* aOwner = (Sprite*)a->getOwner();
+		Sprite* bOwner = (Sprite*)b->getOwner();
 		if (acol == 2) {
-			if (a->getOwner() != nullptr) {
-				a->getOwner()->removeFromParentAndCleanup(true);
-				if (b->getOwner() != nullptr) {
-					b->getOwner()->getChildByName<Enemy*>("enemyData")->takeDmg(5);
-					if (b->getOwner()->getChildByName<Enemy*>("enemyData")->getLife() <= 0) {
-						b->getOwner()->removeFromParentAndCleanup(true);
+			if (aOwner != nullptr) {
+				aOwner->removeFromParentAndCleanup(true);
+				if (bOwner != nullptr) {
+					bOwner->getChildByName<Enemy*>("enemyData")->takeDmg(5);
+					bOwner->runAction(Sequence::create(TintTo::create(0.0f, 125, 125, 125),DelayTime::create(0.1f),TintTo::create(0.0f,255,255,255),nullptr));
+					if (bOwner->getChildByName<Enemy*>("enemyData")->getLife() <= 0) {
+						if (bOwner->getName() == "left" || bOwner->getName() == "right") {
+							if (bOwner->getName() == "left") bOwner->setTexture("../Resources/Image/GiantLeftArmB.png");
+							else bOwner->setTexture("../Resources/Image/GiantRightArmB.png");
+							bOwner->pause();
+							auto boss = bOwner->getParent();
+							if (boss->getChildByName<Sprite*>("left")->getChildByName<Enemy*>("enemyData")->getLife() <= 0 && boss->getChildByName<Sprite*>("right")->getChildByName<Enemy*>("enemyData")->getLife() <= 0) {
+								gameOver = true;
+								GameOver();
+							}
+						}
+						else {
+							int chanceOfMedKit = RandomHelper::random_int(0, 100);
+							if (chanceOfMedKit > 90) {
+								auto medKit = Sprite::create("../Resources/Image/MedKit.png");
+								medKit->setAnchorPoint(Vec2(0.5f, 0.5f));
+								medKit->setScale(0.8);
+								medKit->setPosition(0.0f, 0.0f);
+								medKit->setPhysicsBody(PhysicsBody::createBox(Size(medKit->getContentSize())));
+								medKit->getPhysicsBody()->setContactTestBitmask(1);
+								medKit->getPhysicsBody()->setCategoryBitmask(16);
+								medKit->getPhysicsBody()->setCollisionBitmask(1);
+								this->addChild(medKit);
+								medKit->runAction(Sequence::create(
+									MoveTo::create(0.0f, b->getPosition()),
+									MoveTo::create((b->getPosition().y + 20) / 100.0f, Vec2(b->getPosition().x, -20)),
+									CallFuncN::create(CC_CALLBACK_1(GameLayer::doRemoveFromParentAndCleanup, this, true)),
+									nullptr
+								));
+							}
+							bOwner->removeFromParentAndCleanup(true);
+						}
 					}
 				}
 			}
 		}
 		else {
-			if (b->getOwner() != nullptr) {
-				b->getOwner()->removeFromParentAndCleanup(true);
-				if (a->getOwner() != nullptr) {
-					a->getOwner()->getChildByName<Enemy*>("enemyData")->takeDmg(5);
-					if (a->getOwner()->getChildByName<Enemy*>("enemyData")->getLife() <= 0) {
-						a->getOwner()->removeFromParentAndCleanup(true);
+			if (bOwner != nullptr) {
+				bOwner->removeFromParentAndCleanup(true);
+				if (aOwner != nullptr) {
+					aOwner->getChildByName<Enemy*>("enemyData")->takeDmg(5);
+					aOwner->runAction(Sequence::create(TintTo::create(0.0f, 125, 125, 125), DelayTime::create(0.1f), TintTo::create(0.0f, 255, 255, 255), nullptr));
+					if (aOwner->getChildByName<Enemy*>("enemyData")->getLife() <= 0) {
+						if (aOwner->getName() == "left" || aOwner->getName() == "right") {
+							if (aOwner->getName() == "left") aOwner->setTexture("../Resources/Image/GiantLeftArmB.png");
+							else aOwner->setTexture("../Resources/Image/GiantRightArmB.png");
+							aOwner->pause();
+							auto boss = aOwner->getParent();
+							if (boss->getChildByName<Sprite*>("left")->getChildByName<Enemy*>("enemyData")->getLife() <= 0 && boss->getChildByName<Sprite*>("right")->getChildByName<Enemy*>("enemyData")->getLife() <= 0) {
+								gameOver = true;
+								GameOver();
+							}
+						}
+						else
+						{
+							int chanceOfMedKit = RandomHelper::random_int(0, 100);
+							if (chanceOfMedKit > 90) {
+								auto medKit = Sprite::create("../Resources/Image/MedKit.png");
+								medKit->setAnchorPoint(Vec2(0.5f, 0.5f));
+								medKit->setScale(0.8);
+								medKit->setPosition(0.0f, 0.0f);
+								medKit->setPhysicsBody(PhysicsBody::createBox(Size(medKit->getContentSize())));
+								medKit->getPhysicsBody()->setContactTestBitmask(1);
+								medKit->getPhysicsBody()->setCategoryBitmask(16);
+								medKit->getPhysicsBody()->setCollisionBitmask(1);
+								this->addChild(medKit);
+								medKit->runAction(Sequence::create(
+									MoveTo::create(0.0f, a->getPosition()),
+									MoveTo::create((a->getPosition().y + 20) / 100.0f, Vec2(a->getPosition().x, -20)),
+									CallFuncN::create(CC_CALLBACK_1(GameLayer::doRemoveFromParentAndCleanup, this, true)),
+									nullptr
+								));
+							}
+							a->getOwner()->removeFromParentAndCleanup(true);
+						}
 					}
 				}
 			}
@@ -201,8 +313,9 @@ bool GameLayer::onContactBegin(PhysicsContact& contact) {
 					if (b->getOwner()->getChildByName<Player*>("playerData")->getLife() <= 0) {
 						b->getOwner()->setVisible(false);
 						b->setContactTestBitmask(0);
+						PlayerSprite->pause();
 						gameOver = true;
-						playerDeath();
+						GameOver();
 					}
 				}
 			}
@@ -214,18 +327,39 @@ bool GameLayer::onContactBegin(PhysicsContact& contact) {
 					a->getOwner()->getChildByName<Player*>("playerData")->takeDmg();
 					lifeUI->setTextureRect(Rect(0, 0, 48 * a->getOwner()->getChildByName<Player*>("playerData")->getLife(), 42));
 					if (a->getOwner()->getChildByName<Player*>("playerData")->getLife() <= 0) {
-						a->getOwner()->setVisible(false);
-						a->setContactTestBitmask(0);
+						a->getOwner()->pause();
 						gameOver = true;
-						playerDeath();
+						GameOver();
 					}
 				}
 			}
 		}
 	}
+
+	//medKit to player
+	if ((acol == 1 && bcol == 16) || (bcol == 1 && acol == 16)) {
+		if (acol == 16) {
+			if (a->getOwner() != nullptr) {
+				a->getOwner()->removeFromParentAndCleanup(true);
+				if (b->getOwner() != nullptr) {
+					b->getOwner()->getChildByName<Player*>("playerData")->heal();
+					lifeUI->setTextureRect(Rect(0, 0, 48 * b->getOwner()->getChildByName<Player*>("playerData")->getLife(), 42));
+				}
+			}
+		}
+		else {
+			if (b->getOwner() != nullptr) {
+				b->getOwner()->removeFromParentAndCleanup(true);
+				if (a->getOwner() != nullptr) {
+					a->getOwner()->getChildByName<Player*>("playerData")->heal();
+					lifeUI->setTextureRect(Rect(0, 0, 48 * a->getOwner()->getChildByName<Player*>("playerData")->getLife(), 42));
+				}
+			}
+		}
+	}
+
 	return true;
 }
-
 bool GameLayer::init() {
 	gameOver = false;
 	PlayerXDir = 0.0f; PlayerYDir = 0.0f; PlayerXMov = 0.0f; PlayerYMov = 0.0f;
@@ -242,7 +376,7 @@ bool GameLayer::init() {
 	PlayerSprite->setPhysicsBody(PhysicsBody::createBox(Size(playerCollisionWidth, playerCollisionHeight), PhysicsMaterial(100, 0, 0)));
 	PlayerSprite->getPhysicsBody()->setCollisionBitmask(1);
 	PlayerSprite->getPhysicsBody()->setCategoryBitmask(1);
-	PlayerSprite->getPhysicsBody()->setContactTestBitmask(8);
+	PlayerSprite->getPhysicsBody()->setContactTestBitmask(24);
 	this->addChild(PlayerSprite, 1);
 
 	auto background = Sprite::create("../Resources/Image/Lvl1Background.png");
@@ -261,15 +395,20 @@ bool GameLayer::init() {
 	auto GoSecondRound = CallFunc::create([=]() {SecondRound();});
 	auto GoThirdRound = CallFunc::create([=]() {ThirdRound();});
 	auto GoFourthRound = CallFunc::create([=]() {FourthRound();});
+	auto GoFinalBoss = CallFunc::create([=]() {BossFight(); });
 	auto mainSequence = Sequence::create(
-		DelayTime::create(3.0f), 
+		DelayTime::create(3.0f),
 		GoFirstRound,
 		DelayTime::create(10.0f),
-		GoSecondRound, 
-		DelayTime::create(14.0f),
+		GoFinalBoss,
+		/*DelayTime::create(10.0f),
+		GoSecondRound,
+		DelayTime::create(12.0f),
 		GoThirdRound,
 		DelayTime::create(26.0f),
 		GoFourthRound,
+		DelayTime::create(26.0f),
+		GoFinalBoss,*/
 		nullptr
 	);
 	this->runAction(mainSequence);
@@ -590,7 +729,59 @@ void GameLayer::FourthRound() {
 	));
 }
 void GameLayer::BossFight() {
+	log("Boss fight starts");
+	SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+	auto changeMusic = CallFunc::create([=]() {SimpleAudioEngine::getInstance()->playBackgroundMusic("../Resources/Sound/FinalBossTheme.mp3"); });
+	auto bossDirector = Node::create();
+	this->addChild(bossDirector);
+	auto leftArm = Sprite::create("../Resources/Image/GiantLeftArm.png");
+	leftArm->setName("left");
+	auto rightArm = Sprite::create("../Resources/Image/GiantRightArm.png");
+	rightArm->setName("right");
+	auto lobsterBody = Sprite::create("../Resources/Image/GiantLobsterBody.png");
+	lobsterBody->setName("body");
 
+	leftArm->setAnchorPoint(Vec2(0.5f, 0.5f));
+	leftArm->setPosition(173.3f, 860.0f);
+	lobsterBody->setAnchorPoint(Vec2(0.5f, 0.5f));
+	lobsterBody->setPosition(260.0f, 850.0f);
+	rightArm->setAnchorPoint(Vec2(0.5f, 0.5f));
+	rightArm->setPosition(346.6f, 860.0f);
+	bossDirector->addChild(leftArm);
+	bossDirector->addChild(lobsterBody);
+	bossDirector->addChild(rightArm);
+
+	auto setupBoss = CallFunc::create([bossDirector,leftArm,rightArm]()
+		{
+			auto enemyData1 = Enemy::create();
+			enemyData1->setName("enemyData");
+			enemyData1->setLife(300);
+			leftArm->setPhysicsBody(PhysicsBody::createBox(leftArm->getContentSize()));
+			leftArm->getPhysicsBody()->setContactTestBitmask(2);
+			leftArm->getPhysicsBody()->setCollisionBitmask(2);
+			leftArm->getPhysicsBody()->setCategoryBitmask(4);
+			leftArm->addChild(enemyData1);
+
+			auto enemyData2 = Enemy::create();
+			rightArm->setPhysicsBody(PhysicsBody::createBox(rightArm->getContentSize()));
+			enemyData2->setName("enemyData");
+			enemyData2->setLife(300);
+			rightArm->getPhysicsBody()->setContactTestBitmask(2);
+			rightArm->getPhysicsBody()->setCollisionBitmask(2);
+			rightArm->getPhysicsBody()->setCategoryBitmask(4);
+			rightArm->addChild(enemyData2);
+		});
+	leftArm->runAction(Sequence::create(DelayTime::create(17.0f),MoveBy::create(3,Vec2(0,-190)),nullptr));
+	lobsterBody->runAction(Sequence::create(DelayTime::create(17.0f), MoveBy::create(3, Vec2(0, -140)), nullptr));
+	rightArm->runAction(Sequence::create(DelayTime::create(17.0f), MoveBy::create(3, Vec2(0, -190)), nullptr));
+	auto bossIntro = Sequence::create(
+		DelayTime::create(2.0f),
+		changeMusic,DelayTime::create(18.0f), 
+		setupBoss,
+		CallFuncN::create(CC_CALLBACK_1(GameLayer::bossAttack, this)), 
+		nullptr
+	);
+	bossDirector->runAction(bossIntro);
 }
 
 Sprite* GameLayer::createEnemy(int type,Vec2 initialPosition) {
@@ -601,6 +792,7 @@ Sprite* GameLayer::createEnemy(int type,Vec2 initialPosition) {
 	switch (type) {
 	case 1: //blueLobster
 		newEnemy = Sprite::create("../Resources/Image/BlueLobster.png");
+		newEnemy->setName("Generic");
 		newEnemy->setAnchorPoint(Vec2(0.5, 0.5));
 		newEnemy->setPosition(initialPosition);
 		newEnemy->setPhysicsBody(PhysicsBody::createBox(Size(newEnemy->getContentSize().width, newEnemy->getContentSize().height), PhysicsMaterial(0, 0, 0)));
@@ -613,6 +805,7 @@ Sprite* GameLayer::createEnemy(int type,Vec2 initialPosition) {
 		break;
 	case 2:
 		newEnemy = Sprite::create("../Resources/Image/RedLobster.png");
+		newEnemy->setName("Generic");
 		newEnemy->setScale(1.2f);
 		newEnemy->setAnchorPoint(Vec2(0.5, 0.5));
 		newEnemy->setPosition(initialPosition);
@@ -626,6 +819,7 @@ Sprite* GameLayer::createEnemy(int type,Vec2 initialPosition) {
 		break;
 	case 3:
 		newEnemy = Sprite::create("../Resources/Image/GreenLobster.png");
+		newEnemy->setName("Generic");
 		newEnemy->setScale(1.2f);
 		newEnemy->setAnchorPoint(Vec2(0.5, 0.5));
 		newEnemy->setPosition(initialPosition);
@@ -641,7 +835,18 @@ Sprite* GameLayer::createEnemy(int type,Vec2 initialPosition) {
 	return newEnemy;
 }
 
-void GameLayer::playerDeath() {
-	auto scene = GameMenu::scene();
-	Director::getInstance()->replaceScene(scene);
+void GameLayer::GameOver() {
+	auto backToMenu = CallFunc::create([=]()
+		{
+			auto scene = GameMenu::scene();
+			Director::getInstance()->replaceScene(scene);
+		});
+
+	log("GameOver");
+	if (PlayerSprite->getChildByName<Player*>("playerData")->getLife() == 0){
+		this->runAction(Sequence::create(DelayTime::create(2.0f), backToMenu, nullptr));
+	}
+	else { 
+		this->runAction(Sequence::create(DelayTime::create(2.0f), backToMenu, nullptr));
+	}
 }

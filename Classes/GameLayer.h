@@ -28,7 +28,8 @@ public:
 	void ThirdRound();
 	void FourthRound();
 	void BossFight();
+	void GameOver();
 	Sprite* createEnemy(int type, Vec2 initialPosition);
 	void moveRandom(Sprite* sender);
-	void playerDeath();
+	void bossAttack(Node* bossDirector);
 };
