@@ -1,6 +1,7 @@
 #pragma once
 #include "cocos2d.h"
 #include "GameLayer.h"
+#include "CharSelection.h"
 #include <cocostudio/SimpleAudioEngine.h>
 
 using namespace cocos2d;
@@ -17,6 +18,7 @@ public:
     virtual bool init();
 
     void onNewGameClick(cocos2d::Ref* sender);
+    void onExitClick(cocos2d::Ref* sender);
 
     CREATE_FUNC(GameMenu);
 };

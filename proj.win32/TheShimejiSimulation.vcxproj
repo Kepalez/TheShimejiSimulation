@@ -809,17 +809,21 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Classes\CharSelection.h" />
     <ClInclude Include="..\Classes\Enemy.h" />
     <ClInclude Include="..\Classes\GameLayer.h" />
     <ClInclude Include="..\Classes\GameMenu.h" />
     <ClInclude Include="..\Classes\Player.h" />
+    <ClInclude Include="..\Classes\WinScreen.h" />
     <ClInclude Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\Classes\AppDelegate.h" />
     <ClInclude Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\proj.win32\main.h" />
     <ClInclude Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\proj.win32\resource.h" />
+    <ClCompile Include="..\Classes\CharSelection.cpp" />
     <ClCompile Include="..\Classes\Enemy.cpp" />
     <ClCompile Include="..\Classes\GameLayer.cpp" />
     <ClCompile Include="..\Classes\GameMenu.cpp" />
     <ClCompile Include="..\Classes\Player.cpp" />
+    <ClCompile Include="..\Classes\WinScreen.cpp" />
     <ClCompile Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\Classes\AppDelegate.cpp" />
     <ClCompile Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\proj.win32\main.cpp" />
     <ResourceCompile Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\proj.win32\game.rc" />

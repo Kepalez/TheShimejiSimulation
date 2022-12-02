@@ -4,13 +4,16 @@ using namespace cocos2d;
 //Cat.Bitmasks Player:1, PlayerBullet:2, Enemy:4, EnemyBullet: 8, MedKit: 16 
 //window size 520, 760
 
+int playerCharacter;
 float PlayerXDir = 0.0f, PlayerYDir = 0.0f, PlayerXMov = 0.0f, PlayerYMov = 0.0f;
+string playerbulletDirec;
 bool gameOver = false;
 Sprite* PlayerSprite;
 Sprite* lifeUI;
 float playerCollisionWidth = 28,playerCollisionHeight = 80;
 
-Scene* GameLayer::createScene() {
+Scene* GameLayer::createScene(int characterChoose) {
+	playerCharacter = characterChoose;
 	auto scene = Scene::createWithPhysics();
 	scene->getPhysicsWorld()->setDebugDrawMask(false);
 	scene->getPhysicsWorld()->setGravity(Vec2(0, 0));
@@ -40,7 +43,7 @@ void GameLayer::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 		PlayerXDir++;
 		break;
 	case EventKeyboard::KeyCode::KEY_J:
-		auto bala = Sprite::create("../Resources/Image/CornBullet.png");
+		auto bala = Sprite::create(playerbulletDirec);
 		bala->setPosition(PlayerSprite->getPosition().x, PlayerSprite->getPosition().y + playerCollisionHeight / 2);
 		bala->setAnchorPoint(Vec2(0.5, 0.5));
 		bala->setPhysicsBody(PhysicsBody::createBox(Size(bala->getContentSize().width, bala->getContentSize().height), PhysicsMaterial(1, 0, 0)));
@@ -70,11 +73,6 @@ void GameLayer::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
 	case EventKeyboard::KeyCode::KEY_D:
 		PlayerXDir--;
 	}
-}
-Scene* GameLayer::scene() {
-	auto scene = Scene::create();
-	scene->addChild(GameLayer::create());
-	return scene;
 }
 
 
@@ -368,7 +366,14 @@ bool GameLayer::init() {
 	//load player and other stuff
 	auto playerData = Player::create();
 	playerData->setName("playerData");
-	PlayerSprite = Sprite::create("../Resources/Image/Majime_Corn.png");
+	if (playerCharacter == 1) {
+		PlayerSprite = Sprite::create("../Resources/Image/Shijima_Fish.png");
+		playerbulletDirec = "../Resources/Image/BubbleBullet.png";
+	}
+	else {
+		PlayerSprite = Sprite::create("../Resources/Image/Majime_Corn.png");
+		playerbulletDirec = "../Resources/Image/CornBullet.png";
+	}
 	PlayerSprite->addChild(playerData);
 	PlayerSprite->setPosition(Vec2(254.0f, 90.0f));
 	PlayerSprite->setScale(1, 0.8f);
@@ -400,15 +405,13 @@ bool GameLayer::init() {
 		DelayTime::create(3.0f),
 		GoFirstRound,
 		DelayTime::create(10.0f),
-		GoFinalBoss,
-		/*DelayTime::create(10.0f),
 		GoSecondRound,
 		DelayTime::create(12.0f),
 		GoThirdRound,
 		DelayTime::create(26.0f),
 		GoFourthRound,
 		DelayTime::create(26.0f),
-		GoFinalBoss,*/
+		GoFinalBoss,
 		nullptr
 	);
 	this->runAction(mainSequence);
@@ -836,6 +839,9 @@ Sprite* GameLayer::createEnemy(int type,Vec2 initialPosition) {
 }
 
 void GameLayer::GameOver() {
+	auto toWinScreen = CallFunc::create([=]() {
+		Director::getInstance()->replaceScene(WinScreen::scene());
+		});
 	auto backToMenu = CallFunc::create([=]()
 		{
 			auto scene = GameMenu::scene();
@@ -847,6 +853,6 @@ void GameLayer::GameOver() {
 		this->runAction(Sequence::create(DelayTime::create(2.0f), backToMenu, nullptr));
 	}
 	else { 
-		this->runAction(Sequence::create(DelayTime::create(2.0f), backToMenu, nullptr));
+		this->runAction(Sequence::create(DelayTime::create(2.0f), toWinScreen, nullptr));
 	}
 }

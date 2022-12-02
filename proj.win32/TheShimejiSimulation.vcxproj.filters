@@ -22,6 +22,12 @@
     <ClCompile Include="..\Classes\Enemy.cpp">
       <Filter>Source Files\Classes</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\WinScreen.cpp">
+      <Filter>Source Files\Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\CharSelection.cpp">
+      <Filter>Source Files\Classes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\kpach\OneDrive\Escritorio\Juegos_cocos\TheShimejiSimulation\Classes\AppDelegate.h">
@@ -61,6 +67,12 @@
       <Filter>Source Files\Classes</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\GameMenu.h">
+      <Filter>Source Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\WinScreen.h">
+      <Filter>Source Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\CharSelection.h">
       <Filter>Source Files\Classes</Filter>
     </ClInclude>
   </ItemGroup>

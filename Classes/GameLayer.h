@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Enemy.h"
 #include "GameMenu.h"
+#include "WinScreen.h"
 
 using namespace CocosDenshion;
 using namespace cocos2d;
@@ -16,9 +17,8 @@ private:
 public:
 	GameLayer();
 	virtual bool init();
-	static cocos2d::Scene* scene();
 	void update(float deltaTime);
-	static Scene* createScene();
+	static Scene* createScene(int characterChoose);
 	CREATE_FUNC(GameLayer);
 	void onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event);
 	void onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event);
