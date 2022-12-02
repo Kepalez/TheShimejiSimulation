@@ -50,9 +50,10 @@ bool GameMenu::init() {
 	return true;
 }
 
-void GameMenu::onNewGameClick(cocos2d::Ref * sender)
+void GameMenu::onNewGameClick(cocos2d::Ref* sender)
 {
 	Director::getInstance()->replaceScene(CharSelection::scene());
+}
 
 void GameMenu::onExitClick(cocos2d::Ref* sender) {
 	Director::getInstance()->end();
